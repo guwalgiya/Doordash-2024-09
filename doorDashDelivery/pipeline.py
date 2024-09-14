@@ -2,7 +2,7 @@ import time
 import pandas as pd
 
 from doorDashDelivery.configuration import configuration
-from doorDashDelivery.model import mip_basic
+from doorDashDelivery.model import mip_model
 
 def run_pipeline(s_input_csv_path, s_output_csv_path, s_video_html_path, s_solving_method):
 
@@ -16,11 +16,12 @@ def run_pipeline(s_input_csv_path, s_output_csv_path, s_video_html_path, s_solvi
 
     ### parse input files
     l_input_data = parse_input(config)
+    config.create_important_data(l_input_data)
 
     ### form MIP
-    optimization_model = mip_basic.MIP()
+    optimization_model = mip_model.MIP(config)
     optimization_model.solve()
-    optimization_model.report()
+    optimization_model.produce_solution_file()
 
     f_end_time = time.time()
     print('The program takes {} second to run'.format(
@@ -47,5 +48,11 @@ def parse_input(config):
     ).astype(int) // 10 ** 9 - config.i_0_time_unix
 
     l_input_data = df_input_data.to_dict('records')
+
+    l_input_data = [
+        d
+        for d in l_input_data
+        if d['region_id'] == 9
+    ]
 
     return l_input_data
