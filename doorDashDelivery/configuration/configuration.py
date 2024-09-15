@@ -28,7 +28,7 @@ class Config:
         self.l_input_data = l_input_data
 
         ### this is the worst case, that means every dash handles one order
-        self.i_available_dasher = 20
+        self.i_available_dasher = 80
         self.l_dashers = [
             'd{:03d}'.format(i)
             for i in range(1, self.i_available_dasher + 1)
@@ -36,6 +36,10 @@ class Config:
         self.d_pickup_time_for_customers = {
             # the lower bound for customer x, is the food ready time
             'c{:03d}'.format(d['delivery_id']): d['food_ready_time']
+            for d in l_input_data
+        }
+        self.d_order_create_time_for_customers = {
+            'c{:03d}'.format(d['delivery_id']): d['created_at']
             for d in l_input_data
         }
 
@@ -68,9 +72,9 @@ class Config:
         self.l_nodes = self.l_physical_locations + ['target', 'source']
 
         self.d_time_sec =  {
-            (s_orig, s_dest): du.haversine(
+            (s_orig, s_dest): round(du.haversine(
                 d_coords[s_orig], d_coords[s_dest]
-            ) / 4.5
+            ) / 4.5, 0)
             for s_orig in self.l_physical_locations
             for s_dest in self.l_physical_locations
         }

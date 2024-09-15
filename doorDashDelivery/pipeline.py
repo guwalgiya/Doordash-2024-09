@@ -49,10 +49,4 @@ def parse_input(config):
 
     l_input_data = df_input_data.to_dict('records')
 
-    l_input_data = [
-        d
-        for d in l_input_data
-        if d['region_id'] == 9
-    ]
-
     return l_input_data
