@@ -21,7 +21,7 @@ class Config:
 
         self.i_available_dasher_each_batch = 2
         self.i_num_order_each_batch = 5
-        self.i_0_time_unix = (
+        self.df_0_time_unix = (
             pd.to_datetime(['2015-02-03 02:00:00'])
         ).astype(int) // 10 ** 9
 
@@ -31,15 +31,17 @@ class Config:
         except:
             pass
 
-    def create_important_data(self, l_input_data):
+    def create_important_data(self, l_input_data, i_batch_idx):
 
         self.l_input_data = l_input_data
 
         ### this is the worst case, that means every dash handles one order
-        self.i_available_dasher = self.i_available_dasher_each_batch
         self.l_dashers = [
             'd{:03d}'.format(i)
-            for i in range(1, self.i_available_dasher + 1)
+            for i in range(
+                self.i_available_dasher_each_batch * (i_batch_idx - 1),
+                self.i_available_dasher_each_batch * i_batch_idx
+            )
         ]
         self.d_pickup_time_for_customers = {
             # the lower bound for customer x, is the food ready time

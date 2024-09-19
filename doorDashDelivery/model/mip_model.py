@@ -293,6 +293,7 @@ class MIP():
 
         d_all_sol = {
             'obj': self.model.ObjVal,
+            'dashers': config.l_dashers,
             'arrival': self._get_1_var_group_sol('t', self.d_var_t, i_round = 5),
             'waiting': self._get_1_var_group_sol('w', self.d_var_w),
             'visit_order': self._get_1_var_group_sol('u', self.d_var_u),
@@ -306,6 +307,8 @@ class MIP():
                 'mip_solution_batch_{:03d}.json'.format(self.i_batch_idx)
             )
         )
+
+        return d_all_sol
 
     def _get_1_var_group_sol(self, s_name, d_var, i_round = 0):
 
