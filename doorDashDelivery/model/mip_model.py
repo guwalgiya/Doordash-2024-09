@@ -1,27 +1,29 @@
+import os
+
 from doorDashDelivery.utils import data_utils
 
 from gurobipy import GRB, Model, quicksum
 
 class MIP():
 
-    def __init__(self, config):
+    def __init__(self, config, i_batch_idx):
 
+        self.i_batch_idx = i_batch_idx
         self._construct_MIP(config)
 
 
     def _construct_MIP(self, config):
 
-        print('Start to construct MIP')
+        print('Start to construct MIP {}'.format(self.i_batch_idx))
         self.model = Model('DoorDash')
         self.model.modelSense = GRB.MINIMIZE
         self._create_variables(config)
         self._set_objective(config)
         self._wirte_constraints(config)
         self.model.update()
-        # self.model.write('mip_model.lp')
 
     def solve(self):
-        # self.model.setParam(GRB.Param.TimeLimit, 60)
+        self.model.setParam(GRB.Param.Threads, 8)
         self.model.optimize()
 
     def _create_variables(self, config):
@@ -238,11 +240,6 @@ class MIP():
             for s_customer_id in config.l_customers
         )
 
-        self.model.addConstrs(
-            self.d_var_w[s_dasher_id, s_customer_id] == 0
-            for s_dasher_id in config.l_dashers
-            for s_customer_id in config.l_customers
-        )
 
     def _add_constraint_enforce_stop_order(self, config):
 
@@ -277,14 +274,26 @@ class MIP():
                     self.d_var_t[s_dasher_id, s_customer_id]
                 )
 
+                # must pick-up and deliver by the same dasher
+                self.model.addConstrs(
+                    quicksum(
+                        self.d_var_x[s_dasher_id, s_node, s_restaurtant_id]
+                        for s_node in config.l_nodes
+                    )
+                    ==
+                    quicksum(
+                        self.d_var_x[s_dasher_id, s_node, s_customer_id]
+                        for s_node in config.l_nodes
+                    )
+                    for s_dasher_id in config.l_dashers
+                )
 
-    def produce_solution_file(self):
+
+    def produce_solution_file(self, config):
 
         d_all_sol = {
             'obj': self.model.ObjVal,
-            # 'solving_time': self.solve_time_sec,
             'arrival': self._get_1_var_group_sol('t', self.d_var_t, i_round = 5),
-            # 'used_dasher': self._get_1_var_group_sol(self.d_var_y),
             'waiting': self._get_1_var_group_sol('w', self.d_var_w),
             'visit_order': self._get_1_var_group_sol('u', self.d_var_u),
             'used_arc': self._get_1_var_group_sol('x', self.d_var_x)
@@ -292,7 +301,10 @@ class MIP():
 
         data_utils.saveJson(
             d_all_sol,
-            'mip_solution.json'
+            os.path.join(
+                config.l_solution_dir,
+                'mip_solution_batch_{:03d}.json'.format(self.i_batch_idx)
+            )
         )
 
     def _get_1_var_group_sol(self, s_name, d_var, i_round = 0):

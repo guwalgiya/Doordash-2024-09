@@ -1,3 +1,4 @@
+import os
 import pandas as pd
 
 from doorDashDelivery.utils import data_utils as du
@@ -18,17 +19,24 @@ class Config:
         # 4.5 meters / second
         self.f_drive_speed_mps = 4.5
 
+        self.i_available_dasher_each_batch = 2
+        self.i_num_order_each_batch = 5
         self.i_0_time_unix = (
             pd.to_datetime(['2015-02-03 02:00:00'])
         ).astype(int) // 10 ** 9
 
+        self.l_solution_dir = './raw_solutions'
+        try:
+            os.mkdir(self.l_solution_dir)
+        except:
+            pass
 
     def create_important_data(self, l_input_data):
 
         self.l_input_data = l_input_data
 
         ### this is the worst case, that means every dash handles one order
-        self.i_available_dasher = 80
+        self.i_available_dasher = self.i_available_dasher_each_batch
         self.l_dashers = [
             'd{:03d}'.format(i)
             for i in range(1, self.i_available_dasher + 1)

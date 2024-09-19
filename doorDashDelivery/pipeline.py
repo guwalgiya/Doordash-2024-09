@@ -16,14 +16,25 @@ def run_pipeline(s_input_csv_path, s_output_csv_path, s_video_html_path, s_solvi
 
     ### parse input files
     l_input_data = parse_input(config)
-    config.create_important_data(l_input_data)
 
-    ### form MIP
-    optimization_model = mip_model.MIP(config)
-    optimization_model.solve()
-    optimization_model.produce_solution_file()
+    ### solve a mip for each batch
+    i_batch_idx = 1
+    for i_batch_idx_start in range(0, len(l_input_data), config.i_num_order_each_batch):
+
+        i_batch_idx_end = min(
+            i_batch_idx_start + config.i_num_order_each_batch, len(l_input_data)
+        )
+        l_input_data_batch = l_input_data[i_batch_idx_start : i_batch_idx_end]
+
+        config.create_important_data(l_input_data_batch)
+        optimization_model = mip_model.MIP(config, i_batch_idx)
+        optimization_model.solve()
+        optimization_model.produce_solution_file(config)
+
+        i_batch_idx += 1
 
     f_end_time = time.time()
+    print('---------------------------------------------')
     print('The program takes {} second to run'.format(
         round(f_end_time - f_start_time, 0)
     ))
