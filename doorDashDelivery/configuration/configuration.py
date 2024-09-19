@@ -20,7 +20,7 @@ class Config:
 
         self.i_available_dasher_each_batch = 2
         self.i_num_order_each_batch = 6
-        self.i_num_clusters = 10
+        self.i_num_clusters = 20
         self.df_0_time_unix = (
             pd.to_datetime(['2015-02-03 02:00:00'])
         ).astype(int) // 10 ** 9
@@ -30,6 +30,12 @@ class Config:
             os.mkdir(self.l_solution_dir)
         except:
             pass
+
+    def get_solving_time_each_batch(self, i_num_orders):
+        self.f_solving_sec = round(
+            60 / (i_num_orders / self.i_num_order_each_batch),
+            2
+        )
 
     def create_important_data(self, l_input_data, i_batch_idx):
 

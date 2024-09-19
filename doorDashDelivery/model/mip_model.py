@@ -17,9 +17,10 @@ class MIP():
         print('Start to construct MIP {}'.format(self.i_batch_idx))
         self.model = Model('DoorDash')
         self.model.modelSense = GRB.MINIMIZE
+        self.f_solving_sec = config.f_solving_sec
         self._create_variables(config)
         self._set_objective(config)
-        self._wirte_constraints(config)
+        self._write_constraints(config)
         self.model.update()
         self.model.write(
             os.path.join(
@@ -29,6 +30,7 @@ class MIP():
         )
 
     def solve(self):
+        self.model.setParam(GRB.Param.TimeLimit, self.f_solving_sec)
         self.model.setParam(GRB.Param.Threads, 8)
         self.model.optimize()
 
@@ -100,7 +102,7 @@ class MIP():
         )
 
 
-    def _wirte_constraints(self, config):
+    def _write_constraints(self, config):
 
         self._add_constraint_useless_arcs(config)
         self._add_constraint_flow(config)
@@ -227,12 +229,12 @@ class MIP():
         self.model.addConstrs(
             quicksum(
                 self.d_var_x[
-                    s_dasher_id, s_arc_orig, s_restaurtant_id
+                    s_dasher_id, s_arc_orig, s_restaurant_id
                 ]
                 for s_dasher_id in config.l_dashers
                 for s_arc_orig in config.l_nodes
             ) == 1
-            for s_restaurtant_id in config.l_restaurants
+            for s_restaurant_id in config.l_restaurants
         )
 
     def _add_constraint_customer_must_be_served_by_1(self, config):
@@ -276,7 +278,7 @@ class MIP():
                     +
                     self.d_var_w[s_dasher_id, s_restaurtant_id]
                     +
-                    config.d_time_sec[s_restaurtant_id, s_customer_id]
+                    1
                     <=
                     self.d_var_t[s_dasher_id, s_customer_id]
                 )

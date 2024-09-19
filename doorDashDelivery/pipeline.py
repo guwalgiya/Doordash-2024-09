@@ -18,6 +18,7 @@ def run_pipeline(s_input_csv_path, s_output_csv_path):
 
     ### parse input files
     l_input_data = parse_input(config)
+    config.get_solving_time_each_batch(len(l_input_data))
 
     ### solve a mip for each batch
     l_results = []
