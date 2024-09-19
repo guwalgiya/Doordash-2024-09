@@ -21,6 +21,12 @@ class MIP():
         self._set_objective(config)
         self._wirte_constraints(config)
         self.model.update()
+        self.model.write(
+            os.path.join(
+                config.l_solution_dir,
+                'mip_{:03d}.lp'.format(self.i_batch_idx)
+            )
+        )
 
     def solve(self):
         self.model.setParam(GRB.Param.Threads, 8)
@@ -50,21 +56,21 @@ class MIP():
 
                 self.d_var_t[s_dasher_id, s_arc_orig] = self.model.addVar(
                     vtype = GRB.CONTINUOUS,
-                    name  = '{}_arrive_at_{}'.format(s_dasher_id, s_arc_orig),
+                    name  = 't_{}_{}'.format(s_dasher_id, s_arc_orig),
                     lb    = f_lb
                 )
 
                 # construct w variables
                 self.d_var_w[s_dasher_id, s_arc_orig] = self.model.addVar(
                     vtype = GRB.CONTINUOUS,
-                    name  = '{}_wait_at_{}'.format(s_dasher_id, s_arc_orig),
+                    name  = 'w_{}_{}'.format(s_dasher_id, s_arc_orig),
                     lb    = 0
                 )
 
                 # construct u variables
                 self.d_var_u[s_dasher_id, s_arc_orig] = self.model.addVar(
                     vtype = GRB.CONTINUOUS,
-                    name  = '{}_sequence_{}'.format(s_dasher_id, s_arc_orig),
+                    name  = 'u_{}'.format(s_dasher_id, s_arc_orig),
                     lb    = 0
                 )
 
@@ -73,7 +79,7 @@ class MIP():
                     # construct x variables
                     self.d_var_x[s_dasher_id, s_arc_orig, s_arc_dest] = self.model.addVar(
                         vtype = GRB.BINARY,
-                        name  = '{}_{}{}'.format(s_dasher_id, s_arc_orig, s_arc_dest)
+                        name  = 'x_{}_{}_{}'.format(s_dasher_id, s_arc_orig, s_arc_dest)
                     )
 
 
@@ -92,6 +98,7 @@ class MIP():
                 for i_customer in config.l_customers
             ) == obj
         )
+
 
     def _wirte_constraints(self, config):
 
@@ -315,5 +322,4 @@ class MIP():
         return {
             s_name + '_' + '_'.join(var_key) : round(d_var[var_key].x, i_round)
             for var_key in d_var.keys()
-            if float(d_var[var_key].x) != 0.0
         }

@@ -1,17 +1,19 @@
 import time
 import pandas as pd
+from sklearn.cluster import KMeans
 
 from doorDashDelivery.configuration import configuration
 from doorDashDelivery.model import mip_model
+from doorDashDelivery.utils import data_utils as du
 
-def run_pipeline(s_input_csv_path, s_output_csv_path, s_video_html_path, s_solving_method):
+def run_pipeline(s_input_csv_path, s_output_csv_path):
 
     f_start_time = time.time()
 
 
     ### initalize configuration
     config = configuration.Config(
-        s_input_csv_path, s_output_csv_path, s_video_html_path
+        s_input_csv_path, s_output_csv_path
     )
 
     ### parse input files
@@ -22,13 +24,13 @@ def run_pipeline(s_input_csv_path, s_output_csv_path, s_video_html_path, s_solvi
     i_batch_idx = 1
     for i_batch_idx_start in range(0, len(l_input_data), config.i_num_order_each_batch):
 
+        print('============= Batch {}'.format(i_batch_idx))
         i_batch_idx_end = min(
             i_batch_idx_start + config.i_num_order_each_batch, len(l_input_data)
         )
         l_input_data_batch = l_input_data[i_batch_idx_start : i_batch_idx_end]
 
         config.create_important_data(l_input_data_batch, i_batch_idx)
-
         optimization_model = mip_model.MIP(config, i_batch_idx)
         optimization_model.solve()
         d_solution_batch = optimization_model.produce_solution_file(config)
@@ -36,7 +38,6 @@ def run_pipeline(s_input_csv_path, s_output_csv_path, s_video_html_path, s_solvi
         l_batch_results = raw_solution_to_result(config, d_solution_batch)
 
         l_results += l_batch_results
-
         i_batch_idx += 1
 
     f_end_time = time.time()
@@ -56,7 +57,7 @@ def run_pipeline(s_input_csv_path, s_output_csv_path, s_video_html_path, s_solvi
         ]
     )
     df_results.to_csv(
-        'output.csv',
+        s_output_csv_path,
         index = False
     )
 
@@ -68,6 +69,13 @@ def parse_input(config):
     ### parse data, convert the raw data to a list of dictionary
     df_input_data = pd.read_csv(
         config.s_input_csv_path
+    )
+
+    df_input_data = basic_k_means(config, df_input_data)
+
+    df_input_data = df_input_data.sort_values(
+        ['region_id', 'cluster', 'created_at'],
+        ascending =[True, True, True]
     )
 
     # convert to unix time
@@ -118,7 +126,6 @@ def raw_solution_to_result(config, d_solution_batch):
 
 
 
-
         ### Form result details
         l_dasher_route_details = [
             [
@@ -134,23 +141,30 @@ def raw_solution_to_result(config, d_solution_batch):
                     "c": "DropOff"
                 }[l_dasher_route[i][0]],
 
-                get_unix_time(
+                du.get_unix_time(
                     config,
-                    d_solution_batch['arrival'][
-                        't_{}_{}'.format(
-                            s_dasher_id,
-                            l_dasher_route[i]
-                        )
-                    ]
+                    d_solution_batch,
+                    s_dasher_id,
+                    l_dasher_route[i]
                 )
             ]
 
             for i in range(len(l_dasher_route))
         ]
-
+        print('-----------')
+        print(s_dasher_id)
+        print(l_dasher_route_details)
         l_result_batch += l_dasher_route_details
 
     return l_result_batch
 
-def get_unix_time(config, f_sec):
-    return int(config.df_0_time_unix[0] + f_sec)
+
+
+def basic_k_means(config, df_input_data):
+
+    kmeans = KMeans(n_clusters = config.i_num_clusters, random_state=42)
+    df_input_data['cluster'] = kmeans.fit_predict(
+        df_input_data[['pickup_lat', 'pickup_long']]
+    )
+
+    return df_input_data

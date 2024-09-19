@@ -5,12 +5,11 @@ from doorDashDelivery.utils import data_utils as du
 
 class Config:
 
-    def __init__(self, s_input_csv_path, s_output_csv_path, s_video_html_path):
+    def __init__(self, s_input_csv_path, s_output_csv_path):
 
         # input file path
         self.s_input_csv_path  = s_input_csv_path
         self.s_output_csv_path = s_output_csv_path
-        self.s_video_html_path = s_video_html_path
 
         self._load_hard_coded_parameters()
 
@@ -20,7 +19,8 @@ class Config:
         self.f_drive_speed_mps = 4.5
 
         self.i_available_dasher_each_batch = 2
-        self.i_num_order_each_batch = 5
+        self.i_num_order_each_batch = 6
+        self.i_num_clusters = 10
         self.df_0_time_unix = (
             pd.to_datetime(['2015-02-03 02:00:00'])
         ).astype(int) // 10 ** 9

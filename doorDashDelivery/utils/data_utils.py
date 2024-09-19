@@ -25,3 +25,24 @@ def saveJson(data, path):
     file = open(path, 'w')
     json.dump(data, file, indent = 4)
     file.close()
+
+def get_unix_time(config, d_solution_batch, s_dasher_id, s_stop):
+
+    f_arrival_sec = d_solution_batch['arrival'][
+        't_{}_{}'.format(
+            s_dasher_id,
+            s_stop
+        )
+    ]
+
+    f_wait_sec = d_solution_batch['waiting'][
+        'w_{}_{}'.format(
+            s_dasher_id,
+            s_stop
+        )
+    ]
+
+    if s_stop[0] == 'c':
+        return int(config.df_0_time_unix[0] + f_arrival_sec)
+    else:
+        return int(config.df_0_time_unix[0] + f_arrival_sec + f_wait_sec)
